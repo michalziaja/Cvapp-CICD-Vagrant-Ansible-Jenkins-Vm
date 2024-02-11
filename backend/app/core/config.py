@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "cvapp"
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
         "http://localhost:3000",
-        "http://192.168.22.23:300"
+        "http://192.168.22.23:3000"
     ]
 
 
