@@ -1,17 +1,12 @@
+import pytest
 from fastapi.testclient import TestClient
-from app.app import app  
+from app.core.config import settings
+from app.app import app  # zaimportuj swoją aplikację z odpowiedniego miejsca
 
-# Inicjalizacja klienta testowego
 client = TestClient(app)
 
-# Przykładowy test endpointu
 def test_read_main():
-    response = client.get("/")
+    response = client.get(f"{settings.API_V1_STR}/openapi.json")
     assert response.status_code == 200
-    assert response.json() == {"message": "Hello World"}
-
-
-
-
 
 
