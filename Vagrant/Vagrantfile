@@ -52,7 +52,7 @@ Vagrant.configure("2") do |config|
       host.vm.network "private_network", ip: "192.168.22.22"
       host.vm.network "public_network"
       host.vm.provider "virtualbox" do |vb|
-        vb.memory = "1536"
+        vb.memory = "2048"
   
       end
       host.vm.provision "shell", inline: <<-SHELL
@@ -69,8 +69,8 @@ Vagrant.configure("2") do |config|
 
 
         sudo apt-get update
-        sudo apt-get install openjdk-17-jdk -y  #sprawdzić bardziej aktualna wersje javy
-        java -version
+        sudo apt-get install openjdk-17-jdk -y 
+
 
         sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
         https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
@@ -81,11 +81,11 @@ Vagrant.configure("2") do |config|
         
         sudo apt-get update
         sudo apt-get install jenkins -y
-        sudo systemctl enable jenkins
+        sleep 5
         sudo systemctl start jenkins
+        sudo systemctl enable jenkins
         
-        
-        sudo apt docker.io -y
+        sudo apt-get docker.io -y
         sudo usermod -aG docker jenkins
         sudo chmod 666 /var/run/docker.sock
 
@@ -99,7 +99,7 @@ Vagrant.configure("2") do |config|
         cp ~/.ssh/id_rsa /vagrant/keys
         cp ~/.ssh/id_rsa.pub /vagrant/keys
 
-        #sudo apt-get install python3-pip
+        sudo apt-get install python3-pip
 
         sudo cp -r /vagrant/ansible/* /etc/ansible
         cd /etc/ansible
