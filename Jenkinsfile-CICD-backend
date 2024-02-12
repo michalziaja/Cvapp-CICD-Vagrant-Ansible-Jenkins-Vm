@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+    
+    environment {
+        BACKEND = "192.168.22.24"
+        USER = "ubuntu"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/michalziaja/jenkins-docker.git']])
+            }
+        }
+        
+        stage('Build Backend') {
+            steps {
+                dir('backend') {
+                    sh 'pip install -r requirements.txt'
+                        
+                }
+            }
+        }
+
+        stage('Test Backend') {
+            steps {
+                dir('backend') {
+                    sh 'python3 -m pytest'
+                    
+                }
+            }
+        }
+        
+        stage('Build Docker Backend') {
+            steps {
+                dir('backend') {
+                    script {
+                        api = docker.build("michalziaja/app-api:${env.BUILD_ID}")
+                        
+                    }
+                }
+            }
+        }
+        
+        stage('Push Docker Backend') {
+            steps {
+                dir('backend') {
+                    script {
+                        withDockerRegistry(credentialsId: 'docker-login2', url: 'https://index.docker.io/v1/') {
+                            api.push()
+                        }                 
+                    }
+                }
+            }
+        }
+        
+        stage('Pull & Build Docker Backend') {
+            steps {
+                script {
+                    sshagent(credentials: ['ubuntu2']) {
+                        sh "ssh ${USER}@${BACKEND}"
+                        sh "docker stop api || true"
+                        sh "docker pull michalziaja/app-api:${env.BUILD_ID}"
+                        sh "docker run -d -p 8000:8000 --rm --name api michalziaja/app-api:${env.BUILD_ID}"
+                    }
+                }
+            }
+        }
+        
+        stage('Test Running Backend') {
+            steps {
+                script {
+                    sh 'sleep 30'
+                    sh 'curl -f http://192.168.22.24:8000/docs'
+                }
+            }
+        }
+        
+    }
+}
