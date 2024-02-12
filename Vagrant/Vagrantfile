@@ -56,21 +56,23 @@ Vagrant.configure("2") do |config|
   
       end
       host.vm.provision "shell", inline: <<-SHELL
+        
+        #Setup ubuntu key for Ansible
         sudo cp /vagrant/ubuntu.pub /home/ubuntu/.ssh/authorized_keys
         sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
         sudo systemctl restart ssh
         
+
+        #Install Ansible
         sudo apt-get update
         sudo apt-get install software-properties-common
         sudo add-apt-repository --yes --update ppa:ansible/ansible
         sudo apt-get install ansible -y
 
-        
 
-
+        #Install Jenkins
         sudo apt-get update
-        sudo apt-get install openjdk-17-jdk -y 
-
+        sudo apt-get install openjdk-17-jdk -y  
 
         sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
         https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
@@ -81,17 +83,11 @@ Vagrant.configure("2") do |config|
         
         sudo apt-get update
         sudo apt-get install jenkins -y
-        sleep 5
         sudo systemctl start jenkins
         sudo systemctl enable jenkins
         
-        sudo apt-get docker.io -y
-        sudo usermod -aG docker jenkins
-        sudo chmod 666 /var/run/docker.sock
 
-
-##################################
-
+        #Create key for Jenkins
         sudo su - jenkins
         mkdir .ssh
         ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
@@ -99,19 +95,31 @@ Vagrant.configure("2") do |config|
         cp ~/.ssh/id_rsa /vagrant/keys
         cp ~/.ssh/id_rsa.pub /vagrant/keys
 
-        sudo apt-get install python3-pip
 
+        #Install Docker  
+        sudo apt-get update
+        sudo apt-get install -y docker.io docker-compose
+        sudo usermod -aG docker jenkins
+        sudo chmod 666 /var/run/docker.sock
+
+
+        #Install Pip
+        sudo apt-get install python3-pip -y
+
+
+        #Setup and Run Ansible
         sudo cp -r /vagrant/ansible/* /etc/ansible
         cd /etc/ansible
         sudo chmod 400 ubuntu.pem
-        
         sudo ansible-playbook -i inventory playbook.yaml
 
-        echo '#############################'
-        echo '#############################'
+
+        #Jenkins Password
+        echo '##########JENKINS###############'
+        echo '##########PASSWORD##############'
         sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-        echo '#############################'
-        echo '#############################'
+        echo '################################'
+        echo '################################'
 
       SHELL
     end
