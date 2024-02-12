@@ -1,0 +1,6 @@
+[frotend]
+react ansible_host=192.168.22.23 ansible_user=ubuntu
+[backend]
+api ansible_host=192.168.22.24 ansible_user=ubuntu
+[database]
+mongo ansible_host=192.168.22.25 ansible_user=ubuntu

@@ -1,0 +1,121 @@
+Vagrant.configure("2") do |config|
+  config.hostmanager.enabled = true 
+  config.hostmanager.manage_host = true
+    
+
+    config.vm.define "react" do |react|
+      react.vm.box = "ubuntu/focal64"
+      react.vm.hostname = "react"
+      react.vm.network "private_network", ip: "192.168.22.23"
+      react.vm.network "public_network"
+      react.vm.provider "virtualbox" do |vb|
+        vb.memory = "800"
+      end
+      react.vm.provision "shell", inline: <<-SHELL
+        sudo cp /vagrant/ubuntu.pub /home/ubuntu/.ssh/authorized_keys
+        sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+        sudo systemctl restart ssh
+      SHELL
+    end
+  
+    config.vm.define "api" do |api|
+      api.vm.box = "ubuntu/focal64"
+      api.vm.hostname = "api"
+      api.vm.network "private_network", ip: "192.168.22.24"
+      api.vm.provider "virtualbox" do |vb|
+        vb.memory = "800"
+      end
+      api.vm.provision "shell", inline: <<-SHELL
+        sudo cp /vagrant/ubuntu.pub /home/ubuntu/.ssh/authorized_keys
+        sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+        sudo systemctl restart ssh
+      SHELL
+    end
+  
+    config.vm.define "mongo" do |mongo|
+      mongo.vm.box = "ubuntu/focal64"
+      mongo.vm.hostname = "mongo"
+      mongo.vm.network "private_network", ip: "192.168.22.25"
+      mongo.vm.provider "virtualbox" do |vb|
+        vb.memory = "800"
+      end
+      mongo.vm.provision "shell", inline: <<-SHELL
+        sudo cp /vagrant/ubuntu.pub /home/ubuntu/.ssh/authorized_keys
+        sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+        sudo systemctl restart ssh
+      SHELL
+    end
+
+    config.vm.define "host" do |host|
+      host.vm.box = "ubuntu/focal64"
+      host.vm.hostname = "host"
+      host.vm.network "private_network", ip: "192.168.22.22"
+      host.vm.network "public_network"
+      host.vm.provider "virtualbox" do |vb|
+        vb.memory = "1536"
+  
+      end
+      host.vm.provision "shell", inline: <<-SHELL
+        sudo cp /vagrant/ubuntu.pub /home/ubuntu/.ssh/authorized_keys
+        sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+        sudo systemctl restart ssh
+        
+        sudo apt-get update
+        sudo apt-get install software-properties-common
+        sudo add-apt-repository --yes --update ppa:ansible/ansible
+        sudo apt-get install ansible -y
+
+        
+
+
+        sudo apt-get update
+        sudo apt-get install openjdk-17-jdk -y  #sprawdzić bardziej aktualna wersje javy
+        java -version
+
+        sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+        https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        
+        echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+        https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+        /etc/apt/sources.list.d/jenkins.list > /dev/null
+        
+        sudo apt-get update
+        sudo apt-get install jenkins -y
+        sudo systemctl enable jenkins
+        sudo systemctl start jenkins
+        
+        
+        sudo apt docker.io -y
+        sudo usermod -aG docker jenkins
+        sudo chmod 666 /var/run/docker.sock
+
+
+##################################
+
+        sudo su - jenkins
+        mkdir .ssh
+        ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
+        mkdir -p /vagrant/keys
+        cp ~/.ssh/id_rsa /vagrant/keys
+        cp ~/.ssh/id_rsa.pub /vagrant/keys
+
+        #sudo apt-get install python3-pip
+
+        sudo cp -r /vagrant/ansible/* /etc/ansible
+        cd /etc/ansible
+        sudo chmod 400 ubuntu.pem
+        
+        sudo ansible-playbook -i inventory playbook.yaml
+
+        echo '#############################'
+        echo '#############################'
+        sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+        echo '#############################'
+        echo '#############################'
+
+      SHELL
+    end
+
+    
+  end
+  
