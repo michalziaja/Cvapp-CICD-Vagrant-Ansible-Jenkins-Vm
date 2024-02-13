@@ -1,7 +1,13 @@
 pipeline {
     agent any
+    
     tools {
-        nodejs "NodeV18"
+        nodejs "node18.17"
+    }
+
+    environment {
+        FRONTEND = "192.168.22.23"
+        USER = "ubuntu"
     }
 
 	stages {
@@ -10,42 +16,64 @@ pipeline {
 				checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/michalziaja/jenkins-docker.git']])
 			}
 		}
+
 		stage('Build') {
 			steps {
-				sh '''
-                    cd frontend
-                    npm install
-                '''
+				dir('frontend') {
+					sh 'npm install'
+                }
 			}
 		}
+
 		stage('Test') {
 		    steps {
-		        sh '''
-		            cd frontend
-		            npm run test
-		        '''
+		        dir('frontend') {
+		            sh 'npm run test'
+		        }
 		    }
 		}
 		
 		stage('Docker Build') {
             steps {
-                script {
-                    app = docker.build("michalziaja/app-react:${env.BUILD_ID}", './frontend')
-                    
-                    
+            	dir('frontend') {
+                	script {
+                    	app = docker.build("michalziaja/app-react:${env.BUILD_ID}", './frontend')
+                    }
                 }
             }
 		}
 		
 		stage('Docker Push') {
 		    steps {
-		        script {
-		            withDockerRegistry(credentialsId: 'docker-login2', url: 'https://index.docker.io/v1/') {
-		                app.push()
-		            }
+		    	dir('frontend') {
+		        	script {
+		            	withDockerRegistry(credentialsId: 'docker-login2', url: 'https://index.docker.io/v1/') {
+		                	app.push()
+		                }
+		            }	
 		        }
 		    }
 		}
+
+		stage('Pull & Build Docker Backend') {
+            steps {
+                script {
+                    sshagent(credentials: ['ubuntu']) {
+                        sh "ssh ${USER}@${FRONTEND} 'docker pull michalziaja/app-react:${env.BUILD_ID}'"
+                        sh "ssh ${USER}@${FRONTEND} 'docker run -d -p 8000:8000 --rm --name react michalziaja/app-react:${env.BUILD_ID}'"
+                    }
+                }
+            }
+        }
+        
+        stage('Test Running Backend') {
+            steps {
+                script {
+                    sh 'sleep 30'
+                    sh 'curl -f http://192.168.22.23:3000'
+                }
+            }
+        }
 	}
 }
 

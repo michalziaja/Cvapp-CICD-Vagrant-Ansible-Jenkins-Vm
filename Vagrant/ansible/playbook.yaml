@@ -3,6 +3,13 @@
   hosts: all
   become: yes
   tasks:
+
+    - name: Add Jenkins key to authorized_keys
+      authorized_key:
+        user: ubuntu
+        key: "{{ lookup('file', '/vagrant/keys/id_rsa.pub') }}"
+
+
     - name: Install Docker dependencies
       apt:
         name: "{{ item }}"
@@ -40,9 +47,3 @@
         groups: docker
         append: yes
 
-    - name: Add Jenkins public key to authorized_keys
-      authorized_key:
-        user: ubuntu
-        key: "{{ lookup('file', '/vagrant/keys/id_rsa.pub') }}"
-
-    

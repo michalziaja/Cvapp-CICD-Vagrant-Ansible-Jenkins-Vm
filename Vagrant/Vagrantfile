@@ -4,6 +4,7 @@ Vagrant.configure("2") do |config|
     
 
     config.vm.define "react" do |react|
+      react.vm.boot_timeout = 2000
       react.vm.box = "ubuntu/focal64"
       react.vm.hostname = "react"
       react.vm.network "private_network", ip: "192.168.22.23"
@@ -53,24 +54,24 @@ Vagrant.configure("2") do |config|
       host.vm.network "public_network"
       host.vm.provider "virtualbox" do |vb|
         vb.memory = "2048"
-  
+      
       end
       host.vm.provision "shell", inline: <<-SHELL
         
-        #Setup ubuntu key for Ansible
+        #########Setup ubuntu key for Ansible#########
         sudo cp /vagrant/ubuntu.pub /home/ubuntu/.ssh/authorized_keys
         sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
         sudo systemctl restart ssh
         
 
-        #Install Ansible
+        #########Install Ansible#########
         sudo apt-get update
         sudo apt-get install software-properties-common
         sudo add-apt-repository --yes --update ppa:ansible/ansible
         sudo apt-get install ansible -y
 
 
-        #Install Jenkins
+        ##########Install Jenkins#########
         sudo apt-get update
         sudo apt-get install openjdk-17-jdk -y  
 
@@ -87,36 +88,41 @@ Vagrant.configure("2") do |config|
         sudo systemctl enable jenkins
         
 
-        #Create key for Jenkins
-        sudo su - jenkins
-        mkdir .ssh
-        ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
-        mkdir -p /vagrant/keys
-        cp ~/.ssh/id_rsa /vagrant/keys
-        cp ~/.ssh/id_rsa.pub /vagrant/keys
+        #########Create key for Jenkins#########
+        sudo su - jenkins -c "ssh-keygen -t rsa -b 2048 -f /vagrant/keys/id_rsa -N ''"
+        sudo chmod 400 /vagrant/keys/id_rsa
 
 
-        #Install Docker  
+
+        #######Install Docker#########  
         sudo apt-get update
-        sudo apt-get install -y docker.io docker-compose
-        sudo usermod -aG docker jenkins
+        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io
         sudo chmod 666 /var/run/docker.sock
+        sudo usermod -aG docker ubuntu
 
 
-        #Install Pip
+        ########Install Pip#######
         sudo apt-get install python3-pip -y
 
 
-        #Setup and Run Ansible
+        ########Setup and Run Ansible########
         sudo cp -r /vagrant/ansible/* /etc/ansible
         cd /etc/ansible
         sudo chmod 400 ubuntu.pem
         sudo ansible-playbook -i inventory playbook.yaml
 
+        ########Key checking########
+        sudo su - jenkins -c "ssh -i /vagrant/keys/id_rsa -o StrictHostKeyChecking=no ubuntu@192.168.22.23 echo '####Logged in Frontend!####' && exit"
+        sudo su - jenkins -c "ssh -i /vagrant/keys/id_rsa -o StrictHostKeyChecking=no ubuntu@192.168.22.24 echo '####Logged in Backend!####' && exit"
+        sudo su - jenkins -c "ssh -i /vagrant/keys/id_rsa -o StrictHostKeyChecking=no ubuntu@192.168.22.25 echo '####Logged in Database!####' && exit"
 
-        #Jenkins Password
-        echo '##########JENKINS###############'
-        echo '##########PASSWORD##############'
+        ########Jenkins Password########
+        echo '#######JENKINS PASSWORD#########'
+        echo '################################'
         sudo cat /var/lib/jenkins/secrets/initialAdminPassword
         echo '################################'
         echo '################################'
