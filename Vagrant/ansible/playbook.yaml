@@ -47,3 +47,24 @@
         groups: docker
         append: yes
 
+
+- name: Pull and Run MongoDB on database
+  hosts: database
+  become: yes
+  tasks:
+    - name: Install Docker SDK for Python
+      apt:
+        name: python3-docker
+        state: present
+
+    - name: Pull MongoDB image
+      command: docker pull mongo:4.4.7
+        
+    - name: Run MongoDB container
+      docker_container:
+        name: mongo_container
+        image: mongo:4.4.7
+        state: started
+        restart_policy: always
+        ports:
+          - "27017:27017"
