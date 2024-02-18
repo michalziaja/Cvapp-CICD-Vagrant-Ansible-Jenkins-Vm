@@ -13,7 +13,7 @@ pipeline {
             }
         }
         
-        stage('Build Backend') {
+        stage('Pip Install') {
             steps {
                 dir('backend') {
                     sh 'pip install -r requirements.txt'
@@ -22,7 +22,7 @@ pipeline {
             }
         }
 
-        stage('Test Backend') {
+        stage('PyTest') {
             steps {
                 dir('backend') {
                     sh 'python3 -m pytest'
@@ -74,7 +74,7 @@ pipeline {
             }
         }
         
-        stage('Test Connection to Frontend Container') {
+        stage('Test Connection to Backend Container') {
             steps {
                 script {
                     sh 'sleep 60'
