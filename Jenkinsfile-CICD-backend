@@ -7,7 +7,7 @@ pipeline {
     }
     
     stages {
-        stage('Checkout') {
+        stage('Code Checkout') {
             steps {
                 checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/michalziaja/jenkins-docker.git']])
             }
@@ -31,7 +31,7 @@ pipeline {
             }
         }
         
-        stage('Build Docker Backend') {
+        stage('Build Docker Image') {
             steps {
                 dir('backend') {
                     script {
@@ -42,7 +42,7 @@ pipeline {
             }
         }
         
-        stage('Push Docker Backend') {
+        stage('Push Image to DockerHub') {
             steps {
                 dir('backend') {
                     script {
@@ -53,12 +53,20 @@ pipeline {
                 }
             }
         }
-        
-        stage('Pull & Build Docker Backend') {
+        stage('Stop & Remove Working Container') {
             steps {
                 script {
                     sshagent(credentials: ['ubuntu']) {
                         sh "ssh ${USER}@${BACKEND} 'docker stop \$(docker ps -q)'"
+                    }
+                }
+            }
+        }
+        stage('Pull & Run Docker on Backend Vm') {
+            steps {
+                script {
+                    sshagent(credentials: ['ubuntu']) {
+                      //  sh "ssh ${USER}@${BACKEND} 'docker stop \$(docker ps -q)'"
                         sh "ssh ${USER}@${BACKEND} 'docker pull michalziaja/app-api:${env.BUILD_ID}'"
                         sh "ssh ${USER}@${BACKEND} 'docker run -d -p 8000:8000 --rm --name api michalziaja/app-api:${env.BUILD_ID}'"
                     }
@@ -66,11 +74,11 @@ pipeline {
             }
         }
         
-        stage('Test Running Backend') {
+        stage('Test Connection to Frontend Container') {
             steps {
                 script {
                     sh 'sleep 60'
-                    sh 'curl -f http://192.168.22.24:8000'
+                    sh 'curl -f http://192.168.22.24:8000/docs'
                 }
             }
         }  
