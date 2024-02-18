@@ -4,7 +4,7 @@
   become: yes
   tasks:
 
-    - name: Add Jenkins key to authorized_keys
+    - name: Add Jenkins public key to authorized_keys
       authorized_key:
         user: ubuntu
         key: "{{ lookup('file', '/vagrant/keys/id_rsa.pub') }}"
@@ -41,7 +41,7 @@
         name: docker
         state: started
         
-    - name: Add ubuntu to docker group
+    - name: Add ubuntu user to docker group
       user:
         name: ubuntu
         groups: docker
@@ -59,10 +59,11 @@
 
     - name: Pull MongoDB image
       command: docker pull mongo:4.4.7
+      
         
     - name: Run MongoDB container
       docker_container:
-        name: mongo_container
+        name: mongo
         image: mongo:4.4.7
         state: started
         restart_policy: always
