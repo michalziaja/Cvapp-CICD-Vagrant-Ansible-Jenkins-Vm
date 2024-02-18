@@ -65,7 +65,6 @@ pipeline {
             steps {
                 script {
                     sshagent(credentials: ['ubuntu']) {
-                      //  sh "ssh ${USER}@${FRONTEND} 'docker stop \$(docker ps -q)'"
                         sh "ssh ${USER}@${FRONTEND} 'docker pull michalziaja/app-react:${env.BUILD_ID}'"
                         sh "ssh ${USER}@${FRONTEND} 'docker run -d -p 80:80 --rm --name react michalziaja/app-react:${env.BUILD_ID}'"
                     }
