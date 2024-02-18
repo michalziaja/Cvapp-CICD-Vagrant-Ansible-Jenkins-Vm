@@ -1,0 +1,1 @@
+![Diagram](img/VagrantJenkinsDiagram.png)
