@@ -13,8 +13,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7   # 7 days
     PROJECT_NAME: str = "cvapp"
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = [
-        "http://localhost:3000",
-        "http://192.168.22.23:80"
+        "http://192.168.22.23:8000"
     ]
 
 
