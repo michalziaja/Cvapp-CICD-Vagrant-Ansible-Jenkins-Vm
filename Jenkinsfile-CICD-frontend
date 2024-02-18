@@ -14,7 +14,7 @@ pipeline {
 			}
 		}
 
-		stage('Install') {
+		stage('Npm Install') {
 			steps {
 				dir('frontend') {
 					npm 'install'
@@ -31,7 +31,7 @@ pipeline {
 		    }
 		}
 		
-		stage('Docker Build Image') {
+		stage('Build Docker Image') {
             steps {
             	dir('frontend') {
                 	script {
@@ -52,12 +52,20 @@ pipeline {
 		        }
 		    }
 		}
-
-		stage('Pull & Build Docker Frontend') {
+        stage('Stop & Remove Working Container') {
             steps {
                 script {
                     sshagent(credentials: ['ubuntu']) {
                         sh "ssh ${USER}@${FRONTEND} 'docker stop \$(docker ps -q)'"
+                    }
+                }
+            }
+        }
+		stage('Pull & Run Docker on Frontend Vm') {
+            steps {
+                script {
+                    sshagent(credentials: ['ubuntu']) {
+                      //  sh "ssh ${USER}@${FRONTEND} 'docker stop \$(docker ps -q)'"
                         sh "ssh ${USER}@${FRONTEND} 'docker pull michalziaja/app-react:${env.BUILD_ID}'"
                         sh "ssh ${USER}@${FRONTEND} 'docker run -d -p 80:80 --rm --name react michalziaja/app-react:${env.BUILD_ID}'"
                     }
@@ -65,7 +73,7 @@ pipeline {
             }
         }
         
-        stage('Test Running Frontend Container') {
+        stage('Test Connection to Frontend Container') {
             steps {
                 script {
                     sh 'sleep 60'
